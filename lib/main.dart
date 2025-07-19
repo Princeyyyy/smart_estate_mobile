@@ -1,0 +1,57 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'constants/theme.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/main_screen.dart';
+import 'screens/payment/payment_screen.dart';
+import 'screens/maintenance/report_issue_screen.dart';
+import 'screens/profile/profile_screen.dart';
+
+void main() {
+  runApp(const SmartEstateApp());
+}
+
+class SmartEstateApp extends StatelessWidget {
+  const SmartEstateApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        // Add your providers here
+      ],
+      child: MaterialApp.router(
+        title: 'SmartEstate',
+        theme: AppTheme.lightTheme,
+        routerConfig: _router,
+        debugShowCheckedModeBanner: false,
+      ),
+    );
+  }
+}
+
+final _router = GoRouter(
+  initialLocation: '/login',
+  routes: [
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
+    GoRoute(
+      path: '/payment',
+      builder: (context, state) => const PaymentScreen(),
+    ),
+    GoRoute(
+      path: '/report-issue',
+      builder: (context, state) => const ReportIssueScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
+  ],
+);
