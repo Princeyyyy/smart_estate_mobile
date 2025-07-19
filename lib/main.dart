@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'constants/theme.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/payment/payment_screen.dart';
 import 'screens/maintenance/report_issue_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/settings/notification_settings_screen.dart';
 
 void main() {
   runApp(const SmartEstateApp());
@@ -33,8 +36,13 @@ class SmartEstateApp extends StatelessWidget {
 }
 
 final _router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/',
   routes: [
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',
@@ -52,6 +60,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/notification-settings',
+      builder: (context, state) => const NotificationSettingsScreen(),
     ),
   ],
 );
