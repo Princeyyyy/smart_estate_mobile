@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../constants/colors.dart';
 import '../../widgets/emergency_alert_card.dart';
 

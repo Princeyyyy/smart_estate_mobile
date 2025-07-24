@@ -1,4 +1,4 @@
-package com.example.smart_estate_mobile
+package com.project.smart_estate
 
 import io.flutter.embedding.android.FlutterActivity
 
