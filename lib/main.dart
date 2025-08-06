@@ -6,8 +6,10 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/payment/payment_screen.dart';
+import 'screens/payment/payment_history_screen.dart';
 import 'screens/maintenance/report_issue_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/profile/edit_profile_screen.dart';
 import 'screens/settings/notification_settings_screen.dart';
 
 void main() {
@@ -43,12 +45,20 @@ final _router = GoRouter(
       builder: (context, state) => const PaymentScreen(),
     ),
     GoRoute(
+      path: '/payment-history',
+      builder: (context, state) => const PaymentHistoryScreen(),
+    ),
+    GoRoute(
       path: '/report-issue',
       builder: (context, state) => const ReportIssueScreen(),
     ),
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/edit-profile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
     GoRoute(
       path: '/notification-settings',

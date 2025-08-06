@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
 import '../../widgets/payment_method_card.dart';
-import '../../widgets/receipt_card.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -164,58 +163,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Digital receipts section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'View digital receipts for all payments',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.search,
-                          color: AppColors.textPrimary,
-                        ),
-                        onPressed: () {
-                          // TODO: Implement search receipts
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const ReceiptCard(
-                    title: 'Rent, 1st Street',
-                    amount: '\$200',
-                    date: 'Jan 1, 2023',
-                  ),
-                  const SizedBox(height: 12),
-                  const ReceiptCard(
-                    title: 'Rent, 1st Street',
-                    amount: '\$200',
-                    date: 'Dec 1, 2022',
-                  ),
-                  const SizedBox(height: 12),
-                  const ReceiptCard(
-                    title: 'Rent, 1st Street',
-                    amount: '\$200',
-                    date: 'Nov 1, 2022',
-                  ),
-                ],
               ),
             ),
 

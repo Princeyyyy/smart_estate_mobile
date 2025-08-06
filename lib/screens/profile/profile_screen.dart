@@ -22,14 +22,7 @@ class ProfileScreen extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Implement edit profile
-            },
-          ),
-        ],
+
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -112,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.person_outline,
                     title: 'Personal Information',
                     onTap: () {
-                      // TODO: Implement personal info
+                      context.push('/edit-profile');
                     },
                   ),
                   const Divider(height: 1),
@@ -120,7 +113,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.payment_outlined,
                     title: 'Payment History',
                     onTap: () {
-                      // TODO: Implement payment history
+                      context.push('/payment-history');
                     },
                   ),
                   const Divider(height: 1),
@@ -128,7 +121,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.build_outlined,
                     title: 'Maintenance Requests',
                     onTap: () {
-                      // TODO: Implement maintenance requests
+                      context.push('/report-issue');
                     },
                   ),
                   const Divider(height: 1),
@@ -136,7 +129,7 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.notifications_outlined,
                     title: 'Notification Settings',
                     onTap: () {
-                      // TODO: Implement notification settings
+                      context.push('/notification-settings');
                     },
                   ),
                 ],

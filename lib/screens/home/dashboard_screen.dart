@@ -23,20 +23,7 @@ class DashboardScreen extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Implement search
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Implement menu
-            },
-          ),
-        ],
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

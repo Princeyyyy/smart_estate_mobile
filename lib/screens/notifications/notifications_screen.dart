@@ -41,14 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             color: AppColors.textPrimary,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
-            onPressed: () {
-              // TODO: Implement settings
-            },
-          ),
-        ],
+
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
