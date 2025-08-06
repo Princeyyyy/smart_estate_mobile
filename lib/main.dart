@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'constants/theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -21,16 +20,11 @@ class SmartEstateApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        // Add your providers here
-      ],
-      child: MaterialApp.router(
-        title: 'SmartEstate',
-        theme: AppTheme.lightTheme,
-        routerConfig: _router,
-        debugShowCheckedModeBanner: false,
-      ),
+    return MaterialApp.router(
+      title: 'SmartEstate',
+      theme: AppTheme.lightTheme,
+      routerConfig: _router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

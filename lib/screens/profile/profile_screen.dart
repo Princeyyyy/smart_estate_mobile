@@ -13,6 +13,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Profile',
           style: TextStyle(

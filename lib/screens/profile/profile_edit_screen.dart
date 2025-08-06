@@ -141,6 +141,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => context.pop(),

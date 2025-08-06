@@ -22,6 +22,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => context.pop(),

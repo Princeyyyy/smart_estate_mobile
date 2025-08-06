@@ -32,6 +32,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Notifications',
           style: TextStyle(

@@ -34,6 +34,7 @@ class _ServicesScreenState extends State<ServicesScreen>
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Services',
           style: TextStyle(

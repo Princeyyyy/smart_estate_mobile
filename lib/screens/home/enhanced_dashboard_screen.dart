@@ -17,6 +17,7 @@ class EnhancedDashboardScreen extends StatelessWidget {
           // App Bar
           SliverAppBar(
             backgroundColor: AppColors.primary,
+            automaticallyImplyLeading: false,
             expandedHeight: 120,
             floating: false,
             pinned: true,
