@@ -155,11 +155,25 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 8),
 
             QuickActionCard(
-              title: 'Refer a friend',
-              icon: Icons.people_outlined,
-              onTap: () {
-                // TODO: Implement refer friend
-              },
+              title: 'Visitor Management',
+              icon: Icons.person_add_outlined,
+              onTap: () => context.push('/visitor-management'),
+            ),
+
+            const SizedBox(height: 8),
+
+            QuickActionCard(
+              title: 'Emergency Alerts',
+              icon: Icons.warning_outlined,
+              onTap: () => context.push('/emergency-alerts'),
+            ),
+
+            const SizedBox(height: 8),
+
+            QuickActionCard(
+              title: 'Events Calendar',
+              icon: Icons.calendar_month_outlined,
+              onTap: () => context.push('/events-calendar'),
             ),
 
             const SizedBox(height: 32),

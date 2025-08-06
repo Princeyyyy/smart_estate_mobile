@@ -105,29 +105,32 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              CommunityPostCard(
-                userName: 'Clementina',
-                userHandle: '@clem',
-                content:
-                    'Hey everyone! I\'m moving to a new place. Does anyone have any moving tips?',
-                imageUrls: const [
-                  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
-                  'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
-                  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
-                ],
-                likesCount: 34,
-                commentsCount: 23,
-                sharesCount: 12,
-                timeAgo: '2h',
-                onLike: () {
-                  // TODO: Implement like
-                },
-                onComment: () {
-                  // TODO: Implement comment
-                },
-                onShare: () {
-                  // TODO: Implement share
-                },
+              GestureDetector(
+                onTap: () => context.push('/community-post/post1'),
+                child: CommunityPostCard(
+                  userName: 'Clementina',
+                  userHandle: '@clem',
+                  content:
+                      'Hey everyone! I\'m moving to a new place. Does anyone have any moving tips?',
+                  imageUrls: const [
+                    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+                    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
+                    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
+                  ],
+                  likesCount: 34,
+                  commentsCount: 23,
+                  sharesCount: 12,
+                  timeAgo: '2h',
+                  onLike: () {
+                    // TODO: Implement like
+                  },
+                  onComment: () {
+                    context.push('/community-post/post1');
+                  },
+                  onShare: () {
+                    // TODO: Implement share
+                  },
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -229,6 +232,33 @@ class _ServicesScreenState extends State<ServicesScreen>
             onTap: () {
               _tabController.animateTo(0);
             },
+          ),
+
+          const SizedBox(height: 12),
+
+          ServiceActionCard(
+            icon: Icons.person_add_outlined,
+            title: 'Visitor Management',
+            subtitle: 'Manage your guests and visitors',
+            onTap: () => context.push('/visitor-management'),
+          ),
+
+          const SizedBox(height: 12),
+
+          ServiceActionCard(
+            icon: Icons.warning_outlined,
+            title: 'Emergency Alerts',
+            subtitle: 'View emergency notifications',
+            onTap: () => context.push('/emergency-alerts'),
+          ),
+
+          const SizedBox(height: 12),
+
+          ServiceActionCard(
+            icon: Icons.calendar_month_outlined,
+            title: 'Events Calendar',
+            subtitle: 'View community events',
+            onTap: () => context.push('/events-calendar'),
           ),
         ],
       ),

@@ -11,6 +11,11 @@ import 'screens/maintenance/report_issue_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/settings/notification_settings_screen.dart';
+import 'screens/visitor/visitor_management_screen.dart';
+import 'screens/community/community_post_detail_screen.dart';
+import 'screens/emergency/emergency_alerts_screen.dart';
+import 'screens/events/events_calendar_screen.dart';
+import 'models/community_post.dart';
 
 void main() {
   runApp(const SmartEstateApp());
@@ -63,6 +68,43 @@ final _router = GoRouter(
     GoRoute(
       path: '/notification-settings',
       builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/visitor-management',
+      builder: (context, state) => const VisitorManagementScreen(),
+    ),
+    GoRoute(
+      path: '/community-post/:postId',
+      builder: (context, state) {
+        final postId = state.pathParameters['postId']!;
+        // Create a sample post for demonstration - in real app this would come from API
+        final post = CommunityPost(
+          id: postId,
+          userId: 'user1',
+          userName: 'Clementina',
+          content: 'Hey everyone! I\'m moving to a new place. Does anyone have any moving tips?',
+          images: const [
+            'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+            'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
+            'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
+          ],
+          likesCount: 34,
+          commentsCount: 23,
+          sharesCount: 12,
+          isLiked: false,
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
+        );
+        return CommunityPostDetailScreen(post: post);
+      },
+    ),
+    GoRoute(
+      path: '/emergency-alerts',
+      builder: (context, state) => const EmergencyAlertsScreen(),
+    ),
+    GoRoute(
+      path: '/events-calendar',
+      builder: (context, state) => const EventsCalendarScreen(),
     ),
   ],
 );
