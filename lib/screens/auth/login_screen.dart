@@ -11,14 +11,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isObscured = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Title
                 Text(
-                  'Log in or sign up',
+                  'Login',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -69,20 +69,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 48),
 
-                // Mobile number field
+                // Email field
                 TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    hintText: 'Mobile number',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                    hintText: 'Email address',
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your mobile number';
+                      return 'Please enter your email address';
                     }
-                    if (value.length < 10) {
-                      return 'Please enter a valid mobile number';
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email address';
                     }
                     return null;
                   },
@@ -154,31 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 16),
-
-                // Register button
-                SizedBox(
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => context.go('/register'),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: AppColors.secondaryLight.withOpacity(
-                        0.1,
-                      ),
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.borderLight),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Register',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
 
                 const SizedBox(height: 24),
 
