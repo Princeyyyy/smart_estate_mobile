@@ -16,8 +16,12 @@ import 'screens/community/community_post_detail_screen.dart';
 import 'screens/emergency/emergency_alerts_screen.dart';
 import 'screens/events/events_calendar_screen.dart';
 import 'models/community_post.dart';
+import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const SmartEstateApp());
 }
 
@@ -82,7 +86,8 @@ final _router = GoRouter(
           id: postId,
           userId: 'user1',
           userName: 'Clementina',
-          content: 'Hey everyone! I\'m moving to a new place. Does anyone have any moving tips?',
+          content:
+              'Hey everyone! I\'m moving to a new place. Does anyone have any moving tips?',
           images: const [
             'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
             'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
