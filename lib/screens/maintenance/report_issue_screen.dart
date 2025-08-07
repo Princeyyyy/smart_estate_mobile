@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../constants/colors.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
+import '../../models/ticket.dart';
 
 class ReportIssueScreen extends StatefulWidget {
   const ReportIssueScreen({super.key});
@@ -52,34 +55,70 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       _isSubmitting = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Get current tenant
+      final tenant = await AuthService.getCurrentTenant();
+      if (tenant == null) {
+        throw Exception('Unable to identify tenant. Please log in again.');
+      }
 
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    // Show success dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Request Submitted'),
-              content: const Text(
-                'Your maintenance request has been submitted successfully.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+      // Create ticket object
+      final ticket = Ticket(
+        id: '', // Will be set by Firestore
+        title: '${_selectedIssueType!} Issue',
+        description: _descriptionController.text.trim(),
+        category: _selectedIssueType!,
+        priority: 'Medium', // Default priority
+        status: 'Pending',
+        submittedBy: tenant.name,
+        tenantId: tenant.id,
+        unit: tenant.unit,
+        responses: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
+
+      // Submit ticket to Firestore
+      await FirestoreService.submitTicket(ticket);
+
+      if (mounted) {
+        // Show success dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Request Submitted'),
+                content: const Text(
+                  'Your maintenance request has been submitted successfully. You will be notified when there are updates.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      context.pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit request: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

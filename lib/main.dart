@@ -4,6 +4,7 @@ import 'constants/theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/change_password_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/payment/payment_screen.dart';
 import 'screens/payment/payment_history_screen.dart';
@@ -48,6 +49,10 @@ final _router = GoRouter(
       builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: '/change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
+    ),
     GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
     GoRoute(
       path: '/payment',

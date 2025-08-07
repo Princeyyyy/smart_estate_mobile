@@ -2,12 +2,122 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
 import '../../widgets/profile_menu_item.dart';
+import '../../services/auth_service.dart';
+import '../../models/tenant.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Tenant? _currentTenant;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTenantData();
+  }
+
+  Future<void> _loadTenantData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final tenant = await AuthService.getCurrentTenant();
+
+      setState(() {
+        _currentTenant = tenant;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Profile',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Profile',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading profile',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _loadTenantData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -22,7 +132,6 @@ class ProfileScreen extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
         ),
-
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -44,19 +153,27 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'John Doe',
-                    style: TextStyle(
+                  Text(
+                    _currentTenant?.name ?? 'Unknown User',
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Unit 12A',
-                    style: TextStyle(
+                  Text(
+                    _currentTenant?.unit ?? 'No Unit Assigned',
+                    style: const TextStyle(
                       fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _currentTenant?.email ?? '',
+                    style: const TextStyle(
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -67,15 +184,19 @@ class ProfileScreen extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
+                      color: _getStatusColor(
+                        _currentTenant?.status ?? 'Active',
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text(
-                      'Tenant',
+                    child: Text(
+                      _currentTenant?.status ?? 'Active',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.success,
+                        color: _getStatusColor(
+                          _currentTenant?.status ?? 'Active',
+                        ),
                       ),
                     ),
                   ),
@@ -228,14 +349,39 @@ class ProfileScreen extends StatelessWidget {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop();
-                  context.go('/login');
+                  try {
+                    await AuthService.signOut();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Logout failed: $e'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: const Text('Logout'),
               ),
             ],
           ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return AppColors.success;
+      case 'inactive':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 }

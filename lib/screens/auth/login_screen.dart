@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,16 +31,45 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Sign in with Firebase
+      final credential = await AuthService.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-    setState(() {
-      _isLoading = false;
-    });
+      if (credential?.user != null) {
+        // Check if password change is required
+        final passwordChangeRequired =
+            await AuthService.checkPasswordChangeRequired(
+              credential!.user!.uid,
+            );
 
-    // Navigate to main screen on successful login
-    if (mounted) {
-      context.go('/main');
+        if (mounted) {
+          if (passwordChangeRequired) {
+            // Navigate to password change screen
+            context.go('/change-password');
+          } else {
+            // Navigate to main screen
+            context.go('/main');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../constants/colors.dart';
 import '../../models/payment.dart';
 
@@ -72,12 +71,14 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
+                          color: _getStatusColor(
+                            payment.status,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(
-                          Icons.check_circle,
-                          color: AppColors.success,
+                        child: Icon(
+                          _getStatusIcon(payment.status),
+                          color: _getStatusColor(payment.status),
                           size: 32,
                         ),
                       ),
@@ -87,16 +88,16 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Payment Successful',
+                              _getStatusTitle(payment.status),
                               style: Theme.of(
                                 context,
                               ).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.success,
+                                color: _getStatusColor(payment.status),
                               ),
                             ),
                             Text(
-                              'Receipt #${payment.reference ?? payment.id.substring(0, 8)}',
+                              'Receipt #${payment.transactionId ?? payment.id.substring(0, 8)}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
@@ -115,7 +116,7 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         const Text(
-                          'Amount Paid',
+                          'Amount',
                           style: TextStyle(
                             fontSize: 16,
                             color: AppColors.textSecondary,
@@ -138,19 +139,15 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
                   const SizedBox(height: 32),
 
                   // Payment Details
-                  _buildDetailRow('Description', payment.description),
-                  _buildDetailRow(
-                    'Payment Method',
-                    _getPaymentMethodName(payment.method),
-                  ),
-                  _buildDetailRow(
-                    'Transaction Date',
-                    _formatDate(payment.paidAt ?? payment.createdAt),
-                  ),
-                  _buildDetailRow('Due Date', _formatDate(payment.dueDate)),
-                  if (payment.unitNumber != null)
-                    _buildDetailRow('Unit Number', payment.unitNumber!),
-                  _buildDetailRow('Status', _getStatusName(payment.status)),
+                  _buildDetailRow('Type', payment.type),
+                  _buildDetailRow('Unit', payment.unit),
+                  _buildDetailRow('Payment Method', payment.paymentMethod),
+                  _buildDetailRow('Status', payment.status),
+                  _buildDetailRow('Due Date', payment.dueDate),
+                  if (payment.paidDate != null)
+                    _buildDetailRow('Paid Date', payment.paidDate!),
+                  if (payment.transactionId != null)
+                    _buildDetailRow('Transaction ID', payment.transactionId!),
 
                   const SizedBox(height: 24),
 
@@ -169,10 +166,11 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildDetailRow('Estate Name', '1st Street Estate'),
+                  _buildDetailRow('Tenant', payment.tenant),
+                  _buildDetailRow('Estate Name', 'SmartEstate'),
                   _buildDetailRow('Manager', 'Estate Management Ltd'),
                   _buildDetailRow('Contact', '+254 700 123 456'),
-                  _buildDetailRow('Email', 'manager@1ststreet.com'),
+                  _buildDetailRow('Email', 'manager@smartestate.com'),
                 ],
               ),
             ),
@@ -267,36 +265,43 @@ class PaymentHistoryDetailScreen extends StatelessWidget {
     );
   }
 
-  String _getPaymentMethodName(PaymentMethod method) {
-    switch (method) {
-      case PaymentMethod.mpesa:
-        return 'M-PESA';
-      case PaymentMethod.card:
-        return 'Credit/Debit Card';
-      case PaymentMethod.bankTransfer:
-        return 'Bank Transfer';
-      case PaymentMethod.cash:
-        return 'Cash';
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return AppColors.success;
+      case 'pending':
+        return AppColors.warning;
+      case 'overdue':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
     }
   }
 
-  String _getStatusName(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
-        return 'Pending';
-      case PaymentStatus.processing:
-        return 'Processing';
-      case PaymentStatus.completed:
-        return 'Completed';
-      case PaymentStatus.failed:
-        return 'Failed';
-      case PaymentStatus.cancelled:
-        return 'Cancelled';
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return Icons.check_circle;
+      case 'pending':
+        return Icons.schedule;
+      case 'overdue':
+        return Icons.error;
+      default:
+        return Icons.info;
     }
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat('MMM dd, yyyy at HH:mm').format(date);
+  String _getStatusTitle(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return 'Payment Successful';
+      case 'pending':
+        return 'Payment Pending';
+      case 'overdue':
+        return 'Payment Overdue';
+      default:
+        return 'Payment Status';
+    }
   }
 
   void _shareReceipt() {
