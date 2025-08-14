@@ -13,6 +13,10 @@ import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/settings/notification_settings_screen.dart';
 import 'screens/visitor/visitor_management_screen.dart';
+import 'screens/community/community_screen.dart';
+import 'screens/community/forum_detail_screen.dart';
+import 'screens/community/create_forum_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'screens/community/community_post_detail_screen.dart';
 import 'screens/emergency/emergency_alerts_screen.dart';
 import 'screens/events/events_calendar_screen.dart';
@@ -115,6 +119,25 @@ final _router = GoRouter(
     GoRoute(
       path: '/events-calendar',
       builder: (context, state) => const EventsCalendarScreen(),
+    ),
+    GoRoute(
+      path: '/community',
+      builder: (context, state) => const CommunityScreen(),
+    ),
+    GoRoute(
+      path: '/forum/:forumId',
+      builder: (context, state) {
+        final forumId = state.pathParameters['forumId']!;
+        return ForumDetailScreen(forumId: forumId);
+      },
+    ),
+    GoRoute(
+      path: '/create-forum',
+      builder: (context, state) => const CreateForumScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
   ],
 );

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants/colors.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,6 +42,43 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
+      await _checkAuthAndNavigate();
+    }
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+
+      // Check if user is already logged in
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser != null) {
+        // User is logged in, check if they have completed password change
+        final tenant = await AuthService.getCurrentTenant();
+        if (tenant != null && tenant.hasChangedPassword) {
+          // User is fully authenticated and has changed password
+          context.go('/main');
+          return;
+        } else if (tenant != null && !tenant.hasChangedPassword) {
+          // User needs to change password
+          context.go('/change-password');
+          return;
+        }
+      }
+
+      // User is not logged in
+      if (hasSeenOnboarding) {
+        // Skip onboarding, go directly to login
+        context.go('/login');
+      } else {
+        // Show onboarding for first-time users
+        context.go('/onboarding');
+      }
+    } catch (e) {
+      print('Error checking auth state: $e');
+      // On error, default to onboarding
       context.go('/onboarding');
     }
   }

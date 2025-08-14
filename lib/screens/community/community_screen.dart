@@ -1,40 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
-import '../../models/app_notification.dart';
-import '../../services/notification_service.dart';
+import '../../models/forum.dart';
+import '../../services/forum_service.dart';
 import '../../services/auth_service.dart';
 
-class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+class CommunityScreen extends StatefulWidget {
+  const CommunityScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  State<CommunityScreen> createState() => _CommunityScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _CommunityScreenState extends State<CommunityScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  List<UserNotification> _notifications = [];
+  List<Forum> _forums = [];
   bool _isLoading = true;
   String? _error;
-  String? _currentUserId;
 
   final List<String> _categories = [
     'All',
     'General',
     'Maintenance',
-    'Payment',
-    'Emergency',
-    'Event',
-    'Announcement',
+    'Events',
+    'Complaints',
+    'Suggestions',
+    'Announcements',
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _loadForums();
     _setupRealTimeListener();
   }
 
@@ -44,46 +43,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  void _setupRealTimeListener() async {
-    try {
-      final tenant = await AuthService.getCurrentTenant();
-      if (tenant != null) {
-        _currentUserId = tenant.id;
-        NotificationService.subscribeToUserNotifications(tenant.id).listen((
-          notifications,
-        ) {
-          if (mounted) {
-            setState(() {
-              _notifications = notifications;
-              _isLoading = false;
-            });
-          }
+  void _setupRealTimeListener() {
+    ForumService.subscribeToForums().listen((forums) {
+      if (mounted) {
+        setState(() {
+          _forums = forums;
+          _isLoading = false;
         });
       }
-    } catch (e) {
-      print('Error setting up notification listener: $e');
-    }
+    });
   }
 
-  Future<void> _loadNotifications() async {
+  Future<void> _loadForums() async {
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
 
-      final tenant = await AuthService.getCurrentTenant();
-      if (tenant == null) {
-        throw Exception('Unable to identify user. Please log in again.');
-      }
-
-      _currentUserId = tenant.id;
-      final notifications = await NotificationService.getUserNotifications(
-        tenant.id,
-      );
-
+      final forums = await ForumService.getForums();
       setState(() {
-        _notifications = notifications;
+        _forums = forums;
         _isLoading = false;
       });
     } catch (e) {
@@ -94,114 +74,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  List<UserNotification> get _filteredNotifications {
-    List<UserNotification> filtered = _notifications;
+  List<Forum> get _filteredForums {
+    List<Forum> filtered = _forums;
 
     // Filter by category
     if (_selectedCategory != 'All') {
       filtered =
-          filtered.where((notification) {
-            return notification.notification?.category == _selectedCategory;
-          }).toList();
+          filtered
+              .where((forum) => forum.category == _selectedCategory)
+              .toList();
     }
-
-    // Only show non-archived notifications by default
-    filtered =
-        filtered.where((notification) => !notification.isArchived).toList();
 
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       filtered =
-          filtered.where((notification) {
-            final notif = notification.notification;
-            if (notif == null) return false;
-            return notif.title.toLowerCase().contains(
+          filtered.where((forum) {
+            return forum.title.toLowerCase().contains(
                   _searchQuery.toLowerCase(),
                 ) ||
-                notif.message.toLowerCase().contains(
+                forum.description.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                forum.createdBy.toLowerCase().contains(
                   _searchQuery.toLowerCase(),
                 );
           }).toList();
     }
 
     return filtered;
-  }
-
-  Future<void> _markAsRead(UserNotification userNotification) async {
-    if (userNotification.isRead || _currentUserId == null) return;
-
-    try {
-      await NotificationService.markNotificationAsRead(
-        _currentUserId!,
-        userNotification.notificationId,
-        userNotification.id.isNotEmpty ? userNotification.id : null,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to mark as read: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _archiveNotification(UserNotification userNotification) async {
-    if (userNotification.isArchived || _currentUserId == null) return;
-
-    try {
-      await NotificationService.archiveNotification(
-        _currentUserId!,
-        userNotification.notificationId,
-        userNotification.id.isNotEmpty ? userNotification.id : null,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Notification archived'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to archive: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _markAllAsRead() async {
-    if (_currentUserId == null) return;
-
-    try {
-      await NotificationService.markAllAsRead(_currentUserId!);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All notifications marked as read'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to mark all as read: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -214,7 +114,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           elevation: 0,
           automaticallyImplyLeading: false,
           title: const Text(
-            'Notifications',
+            'Community',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -234,7 +134,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           elevation: 0,
           automaticallyImplyLeading: false,
           title: const Text(
-            'Notifications',
+            'Community',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -249,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Icon(Icons.error_outline, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
               Text(
-                'Error loading notifications',
+                'Error loading community',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -270,7 +170,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _loadNotifications,
+                onPressed: _loadForums,
                 child: const Text('Retry'),
               ),
             ],
@@ -279,58 +179,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
     }
 
-    final unreadCount =
-        _notifications.where((n) => !n.isRead && !n.isArchived).length;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            const Text(
-              'Notifications',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            if (unreadCount > 0) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$unreadCount',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        title: const Text(
+          'Community',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
         ),
         actions: [
-          if (unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: const Text(
-                'Mark all read',
-                style: TextStyle(fontSize: 14, color: AppColors.primary),
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.add, color: AppColors.textPrimary),
+            onPressed: () {
+              context.push('/create-forum');
+            },
+          ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadNotifications,
+        onRefresh: _loadForums,
         child: Column(
           children: [
             // Search and Filter Section
@@ -348,7 +221,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       });
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search notifications...',
+                      hintText: 'Search forums...',
                       prefixIcon: const Icon(
                         Icons.search,
                         color: AppColors.textSecondary,
@@ -381,7 +254,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Category filter only
+                  // Category filter
                   SizedBox(
                     height: 40,
                     child: ListView.builder(
@@ -411,7 +284,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   isSelected
                                       ? FontWeight.w600
                                       : FontWeight.normal,
-                              fontSize: 12,
                             ),
                           ),
                         );
@@ -422,26 +294,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
 
-            // Notifications List
+            // Forums List
             Expanded(
               child:
-                  _filteredNotifications.isEmpty
+                  _filteredForums.isEmpty
                       ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              _notifications.isEmpty
-                                  ? Icons.notifications_none_outlined
+                              _forums.isEmpty
+                                  ? Icons.forum_outlined
                                   : Icons.search_off,
                               size: 64,
                               color: AppColors.textSecondary.withOpacity(0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              _notifications.isEmpty
-                                  ? 'No Notifications'
-                                  : 'No notifications found',
+                              _forums.isEmpty
+                                  ? 'No Forums Yet'
+                                  : 'No forums found',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -450,26 +322,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              _notifications.isEmpty
-                                  ? 'You\'ll see notifications here when you receive them'
+                              _forums.isEmpty
+                                  ? 'Be the first to start a discussion!'
                                   : 'Try adjusting your search or filter',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
                               ),
                             ),
+                            if (_forums.isEmpty) ...[
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push('/create-forum');
+                                },
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create Forum'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       )
                       : ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: _filteredNotifications.length,
+                        itemCount: _filteredForums.length,
                         itemBuilder: (context, index) {
-                          final userNotification =
-                              _filteredNotifications[index];
+                          final forum = _filteredForums[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildNotificationCard(userNotification),
+                            child: _buildForumCard(forum),
                           );
                         },
                       ),
@@ -480,26 +365,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(UserNotification userNotification) {
-    final notification = userNotification.notification;
-    if (notification == null) return const SizedBox.shrink();
-
+  Widget _buildForumCard(Forum forum) {
     return GestureDetector(
-      onTap: () => _markAsRead(userNotification),
+      onTap: () {
+        context.push('/forum/${forum.id}');
+      },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color:
-              userNotification.isRead
-                  ? AppColors.surface
-                  : AppColors.primary.withOpacity(0.05),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                userNotification.isRead
-                    ? AppColors.borderLight
-                    : AppColors.primary.withOpacity(0.2),
-          ),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,65 +389,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(
-                      notification.category,
-                    ).withOpacity(0.1),
+                    color: _getCategoryColor(forum.category).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    notification.category,
+                    forum.category,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: _getCategoryColor(notification.category),
+                      color: _getCategoryColor(forum.category),
                     ),
                   ),
                 ),
                 const Spacer(),
-                if (!userNotification.isRead)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                const SizedBox(width: 8),
                 Text(
-                  notification.timeAgo,
+                  forum.timeAgo,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'archive':
-                        _archiveNotification(userNotification);
-                        break;
-                      case 'mark_read':
-                        _markAsRead(userNotification);
-                        break;
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        if (!userNotification.isRead)
-                          const PopupMenuItem(
-                            value: 'mark_read',
-                            child: Text('Mark as read'),
-                          ),
-                        if (!userNotification.isArchived)
-                          const PopupMenuItem(
-                            value: 'archive',
-                            child: Text('Archive'),
-                          ),
-                      ],
-                  child: Icon(
-                    Icons.more_vert,
-                    size: 16,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -580,43 +414,71 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 12),
             // Title
             Text(
-              notification.title,
-              style: TextStyle(
+              forum.title,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            // Message
+            // Description
             Text(
-              notification.message,
+              forum.description,
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
-                height: 1.4,
               ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            if (notification.type == 'specific') ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Personal notification',
-                  style: TextStyle(
+            const SizedBox(height: 12),
+            // Footer
+            Row(
+              children: [
+                Text(
+                  'By ${forum.createdBy}',
+                  style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.info,
-                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-              ),
-            ],
+                const Spacer(),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.favorite_outline,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${forum.likesCount}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.comment_outlined,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${forum.commentsCount}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -629,13 +491,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return AppColors.primary;
       case 'Maintenance':
         return AppColors.warning;
-      case 'Payment':
+      case 'Events':
         return AppColors.success;
-      case 'Emergency':
+      case 'Complaints':
         return AppColors.error;
-      case 'Event':
+      case 'Suggestions':
         return AppColors.info;
-      case 'Announcement':
+      case 'Announcements':
         return AppColors.secondary;
       default:
         return AppColors.textSecondary;

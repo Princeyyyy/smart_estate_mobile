@@ -40,6 +40,30 @@ class FirestoreService {
     }
   }
 
+  static Future<void> updateTenant(Tenant tenant) async {
+    try {
+      await _firestore.collection('tenants').doc(tenant.id).update({
+        'name': tenant.name,
+        'email': tenant.email,
+        'phone': tenant.phone,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update tenant: $e');
+    }
+  }
+
+  static Stream<Tenant?> subscribeToTenant(String tenantId) {
+    return _firestore.collection('tenants').doc(tenantId).snapshots().map((
+      snapshot,
+    ) {
+      if (snapshot.exists) {
+        return Tenant.fromJson({'id': snapshot.id, ...snapshot.data()!});
+      }
+      return null;
+    });
+  }
+
   // PAYMENT OPERATIONS
   static Future<List<Payment>> getTenantPayments(String tenantId) async {
     try {

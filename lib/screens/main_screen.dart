@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../constants/colors.dart';
+import '../constants/colors.dart';
 import 'home/dashboard_screen.dart';
 import 'notifications/notifications_screen.dart';
+import 'community/community_screen.dart';
 import 'maintenance/services_screen.dart';
 import 'profile/profile_screen.dart';
 
@@ -17,6 +18,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
+    const CommunityScreen(),
     const NotificationsScreen(),
     const ServicesScreen(),
     const ProfileScreen(),
@@ -47,34 +49,33 @@ class _MainScreenState extends State<MainScreen> {
           backgroundColor: AppColors.surface,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.textSecondary,
-          selectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-          ),
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
-              label: 'Home',
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.forum_outlined),
+              activeIcon: Icon(Icons.forum),
+              label: '',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.notifications_outlined),
               activeIcon: Icon(Icons.notifications),
-              label: 'Notifications',
+              label: '',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.build_outlined),
               activeIcon: Icon(Icons.build),
-              label: 'Services',
+              label: '',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
-              label: 'Me',
+              label: '',
             ),
           ],
         ),

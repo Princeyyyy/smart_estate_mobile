@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
 import '../../widgets/profile_menu_item.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 import '../../models/tenant.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -21,6 +22,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadTenantData();
+    _setupRealTimeListener();
+  }
+
+  void _setupRealTimeListener() async {
+    try {
+      final tenant = await AuthService.getCurrentTenant();
+      if (tenant != null) {
+        // Listen to tenant data updates in real-time
+        FirestoreService.subscribeToTenant(tenant.id).listen((updatedTenant) {
+          if (mounted && updatedTenant != null) {
+            setState(() {
+              _currentTenant = updatedTenant;
+              _isLoading = false;
+            });
+          }
+        });
+      }
+    } catch (e) {
+      // Handle error silently for real-time listeners
+      print('Error setting up profile real-time listener: $e');
+    }
   }
 
   Future<void> _loadTenantData() async {
