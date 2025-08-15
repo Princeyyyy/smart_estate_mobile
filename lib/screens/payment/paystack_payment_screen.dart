@@ -10,7 +10,6 @@ import '../../services/paystack_service.dart';
 import '../../services/rent_calculation_service.dart';
 import '../../models/tenant.dart';
 import '../../models/payment.dart';
-import '../../widgets/payment_method_card.dart';
 
 class PaystackPaymentScreen extends StatefulWidget {
   const PaystackPaymentScreen({super.key});

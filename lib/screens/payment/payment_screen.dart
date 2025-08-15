@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
-import '../../widgets/payment_method_card.dart';
 import '../../services/auth_service.dart';
-import '../../services/firestore_service.dart';
 import '../../services/rent_calculation_service.dart';
 import '../../models/tenant.dart';
-import '../../models/payment.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});

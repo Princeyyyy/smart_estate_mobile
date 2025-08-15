@@ -22,8 +22,6 @@ class OneSignalService {
       // OneSignal Initialization
       OneSignal.initialize(appId);
 
-      // The promptForPushNotificationsWithUserResponse function will show the iOS or Android push notification prompt.
-      // We recommend removing the following code and instead using an In-App Message to prompt for notification permission
       OneSignal.Notifications.requestPermission(true);
 
       _isInitialized = true;
@@ -147,8 +145,6 @@ class OneSignalService {
         );
       }
 
-      // You can modify the notification or prevent it from showing
-      // For now, we'll let it display normally
       event.notification.display();
     });
 
@@ -241,7 +237,6 @@ class OneSignalService {
           // Navigate to community post
           break;
         default:
-          // Default action - maybe navigate to notifications screen
           break;
       }
     }
