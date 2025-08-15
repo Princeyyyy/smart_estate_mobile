@@ -267,14 +267,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context.push('/report-issue');
                     },
                   ),
-                  const Divider(height: 1),
-                  ProfileMenuItem(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notification Settings',
-                    onTap: () {
-                      context.push('/notification-settings');
-                    },
-                  ),
                 ],
               ),
             ),

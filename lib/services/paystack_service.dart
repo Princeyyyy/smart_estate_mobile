@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'dart:math';
 
 class PaystackService {
@@ -7,12 +6,10 @@ class PaystackService {
       'pk_test_322fd3b69c78250d19dd970d49e9054eef55a8fd';
   static const String _secretKeyTest =
       'sk_test_52016ab3b32bb899b2356f3a5888fb9cb7073b8d';
-  static const String _publicKeyLive = 'pk_live_your_live_public_key_here';
-  static const String _secretKeyLive = 'sk_live_your_live_secret_key_here';
 
   // Use test keys in debug mode, live keys in release mode
-  static String get publicKey => kDebugMode ? _publicKeyTest : _publicKeyLive;
-  static String get secretKey => kDebugMode ? _secretKeyTest : _secretKeyLive;
+  static String get publicKey => _publicKeyTest;
+  static String get secretKey => _secretKeyTest;
 
   static const String currency = 'KES'; // Kenyan Shilling
   static const String callbackUrl = 'https://your-domain.com/payment/callback';
@@ -25,14 +22,14 @@ class PaystackService {
     return 'TXN_${timestamp}_$randomSuffix';
   }
 
-  /// Format amount for Paystack (KES doesn't need conversion to cents)
+  /// Format amount for Paystack
   static double formatAmountForPaystack(double amount) {
-    return amount; // KES is already in the correct unit for Paystack
+    return amount;
   }
 
   /// Format amount from Paystack response
   static double formatAmountFromPaystack(double paystackAmount) {
-    return paystackAmount; // KES doesn't need conversion from cents
+    return paystackAmount;
   }
 
   /// Get payment channels based on payment method

@@ -13,7 +13,6 @@ import 'screens/payment/payment_history_screen.dart';
 import 'screens/maintenance/report_issue_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
-import 'screens/settings/notification_settings_screen.dart';
 import 'screens/visitor/visitor_management_screen.dart';
 import 'screens/community/community_screen.dart';
 import 'screens/community/forum_detail_screen.dart';
@@ -22,7 +21,6 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/community/community_post_detail_screen.dart';
 import 'screens/emergency/emergency_alerts_screen.dart';
 import 'screens/events/events_calendar_screen.dart';
-import 'screens/debug/onesignal_debug_screen.dart';
 import 'models/community_post.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -98,14 +96,6 @@ final _router = GoRouter(
       builder: (context, state) => const EditProfileScreen(),
     ),
     GoRoute(
-      path: '/notification-settings',
-      builder: (context, state) => const NotificationSettingsScreen(),
-    ),
-    GoRoute(
-      path: '/visitor-management',
-      builder: (context, state) => const VisitorManagementScreen(),
-    ),
-    GoRoute(
       path: '/community-post/:postId',
       builder: (context, state) {
         final postId = state.pathParameters['postId']!;
@@ -157,10 +147,6 @@ final _router = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
-    ),
-    GoRoute(
-      path: '/onesignal-debug',
-      builder: (context, state) => const OneSignalDebugScreen(),
     ),
   ],
 );

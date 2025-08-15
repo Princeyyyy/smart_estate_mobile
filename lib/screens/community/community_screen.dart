@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../constants/colors.dart';
 import '../../models/forum.dart';
 import '../../services/forum_service.dart';
-import '../../services/auth_service.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
