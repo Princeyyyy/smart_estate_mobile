@@ -7,6 +7,7 @@ import '../../constants/colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/paystack_service.dart';
+import '../../services/rent_calculation_service.dart';
 import '../../models/tenant.dart';
 import '../../models/payment.dart';
 import '../../widgets/payment_method_card.dart';
@@ -24,6 +25,7 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
   bool _isLoading = true;
   Tenant? _currentTenant;
   double _outstandingAmount = 0.0;
+  Map<String, dynamic>? _rentStatus;
   String? _error;
   final _emailController = TextEditingController();
 
@@ -66,18 +68,15 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
         throw Exception('Unable to identify tenant. Please log in again.');
       }
 
-      // Get outstanding payments
-      final payments = await FirestoreService.getTenantPayments(tenant.id);
-      double outstanding = 0.0;
-      for (final payment in payments) {
-        if (payment.status == 'Pending' || payment.status == 'Overdue') {
-          outstanding += payment.amount;
-        }
-      }
+      // Get current rent status using the new rent calculation service
+      final rentStatus = await RentCalculationService.getCurrentRentStatus(
+        tenant,
+      );
 
       setState(() {
         _currentTenant = tenant;
-        _outstandingAmount = outstanding;
+        _rentStatus = rentStatus;
+        _outstandingAmount = rentStatus['outstandingAmount'] as double;
         _emailController.text = tenant.email;
         _isLoading = false;
       });
@@ -196,7 +195,11 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Pay Outstanding Balance',
+            _outstandingAmount > 0
+                ? (_rentStatus?['isOverdue'] == true
+                    ? 'Pay Overdue Rent'
+                    : 'Pay Current Rent')
+                : 'No Outstanding Balance',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -219,29 +222,65 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
               border: Border.all(color: Colors.grey[200]!),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Amount Due',
+                      _outstandingAmount > 0 ? 'Amount Due' : 'Current Status',
                       style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
                     Text(
                       _outstandingAmount > 0
                           ? 'KSh ${_outstandingAmount.toStringAsFixed(0)}'
-                          : 'KSh 0 - No outstanding balance',
+                          : 'All rent payments up to date',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color:
                             _outstandingAmount > 0
-                                ? AppColors.error
+                                ? (_rentStatus?['isOverdue'] == true
+                                    ? AppColors.error
+                                    : AppColors.warning)
                                 : AppColors.success,
                       ),
                     ),
                   ],
                 ),
+                if (_rentStatus != null && _outstandingAmount > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'For: ${RentCalculationService.getRentPeriodDescription(_rentStatus!['currentDueDate'])}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _rentStatus!['isOverdue'] == true
+                        ? 'Overdue by ${_rentStatus!['daysSinceDue']} days'
+                        : 'Due: ${RentCalculationService.formatDate(_rentStatus!['currentDueDate'])}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          _rentStatus!['isOverdue'] == true
+                              ? AppColors.error
+                              : AppColors.warning,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ] else if (_rentStatus != null && _outstandingAmount == 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Next rent due: ${RentCalculationService.formatDate(_rentStatus!['nextDueDate'])}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -501,7 +540,7 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
         customerEmail: email,
         reference: uniqueTransRef,
         currency: PaystackService.currency,
-        amount: PaystackService.formatAmountToCents(_outstandingAmount),
+        amount: PaystackService.formatAmountForPaystack(_outstandingAmount),
         callbackUrl: PaystackService.callbackUrl,
         paymentChannel: paymentChannels,
         metaData: metadata,
@@ -544,35 +583,66 @@ class _PaystackPaymentScreenState extends State<PaystackPaymentScreen> {
     String email,
   ) async {
     try {
-      // Create payment record
-      final payment = Payment(
-        id: '', // Will be set by Firestore
-        tenantId: _currentTenant!.id,
-        tenant: _currentTenant!.name,
-        unit: _currentTenant!.unit,
-        amount: _outstandingAmount,
-        type: 'Rent',
-        status: 'Paid', // Mark as paid since Paystack confirmed
-        paymentMethod: PaystackService.getPaymentMethodDisplayName(
-          _selectedPaymentMethod,
-        ),
-        transactionId: paymentData.reference ?? uniqueTransRef,
-        paystackReference: paymentData.reference,
-        paystackStatus: paymentData.status ?? 'success',
-        paystackMetadata: {
-          'payment_provider': 'paystack',
-          'email': email,
-          'payment_channel': _selectedPaymentMethod,
-          'amount_paid': _outstandingAmount,
-        },
-        dueDate: DateTime.now().toIso8601String(),
-        paidDate: DateTime.now().toIso8601String(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      // Check if we have an existing rent payment to update
+      final currentRentPayment = _rentStatus?['currentRentPayment'] as Payment?;
 
-      // Save payment to Firestore
-      await FirestoreService.addPayment(payment);
+      if (currentRentPayment != null) {
+        // Update existing payment record
+        await FirestoreService.updatePaymentStatus(
+          currentRentPayment.id,
+          'Paid',
+          transactionId: paymentData.reference ?? uniqueTransRef,
+          paystackReference: paymentData.reference,
+          paystackStatus: paymentData.status ?? 'success',
+          paystackMetadata: {
+            'payment_provider': 'paystack',
+            'email': email,
+            'payment_channel': _selectedPaymentMethod,
+            'amount_paid': _outstandingAmount,
+          },
+          paidDate: DateTime.now().toIso8601String(),
+        );
+
+        // Also update payment method
+        await FirestoreService.updatePayment(currentRentPayment.id, {
+          'paymentMethod': PaystackService.getPaymentMethodDisplayName(
+            _selectedPaymentMethod,
+          ),
+        });
+      } else {
+        // Create new payment record (fallback)
+        final payment = Payment(
+          id: '', // Will be set by Firestore
+          tenantId: _currentTenant!.id,
+          tenant: _currentTenant!.name,
+          unit: _currentTenant!.unit,
+          amount: _outstandingAmount,
+          type: 'Rent',
+          status: 'Paid', // Mark as paid since Paystack confirmed
+          paymentMethod: PaystackService.getPaymentMethodDisplayName(
+            _selectedPaymentMethod,
+          ),
+          transactionId: paymentData.reference ?? uniqueTransRef,
+          paystackReference: paymentData.reference,
+          paystackStatus: paymentData.status ?? 'success',
+          paystackMetadata: {
+            'payment_provider': 'paystack',
+            'email': email,
+            'payment_channel': _selectedPaymentMethod,
+            'amount_paid': _outstandingAmount,
+          },
+          dueDate:
+              _rentStatus != null
+                  ? _rentStatus!['currentDueDate'].toIso8601String()
+                  : DateTime.now().toIso8601String(),
+          paidDate: DateTime.now().toIso8601String(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        // Save payment to Firestore
+        await FirestoreService.addPayment(payment);
+      }
 
       if (mounted) {
         setState(() {

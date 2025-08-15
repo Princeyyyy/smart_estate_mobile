@@ -4,6 +4,7 @@ import '../../constants/colors.dart';
 import '../../widgets/payment_method_card.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
+import '../../services/rent_calculation_service.dart';
 import '../../models/tenant.dart';
 import '../../models/payment.dart';
 
@@ -15,10 +16,9 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  String _selectedPaymentMethod = 'M-Pesa';
-  bool _isProcessing = false;
   Tenant? _currentTenant;
   double _outstandingAmount = 0.0;
+  Map<String, dynamic>? _rentStatus;
   bool _isLoading = true;
   String? _error;
 
@@ -41,18 +41,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
         throw Exception('Unable to identify tenant. Please log in again.');
       }
 
-      // Get outstanding payments
-      final payments = await FirestoreService.getTenantPayments(tenant.id);
-      double outstanding = 0.0;
-      for (final payment in payments) {
-        if (payment.status == 'Pending' || payment.status == 'Overdue') {
-          outstanding += payment.amount;
-        }
-      }
+      // Get current rent status using the new rent calculation service
+      final rentStatus = await RentCalculationService.getCurrentRentStatus(
+        tenant,
+      );
 
       setState(() {
         _currentTenant = tenant;
-        _outstandingAmount = outstanding;
+        _rentStatus = rentStatus;
+        _outstandingAmount = rentStatus['outstandingAmount'] as double;
         _isLoading = false;
       });
     } catch (e) {
@@ -174,7 +171,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pay Outstanding Balance',
+                    _outstandingAmount > 0
+                        ? (_rentStatus?['isOverdue'] == true
+                            ? 'Pay Overdue Rent'
+                            : 'Pay Current Rent')
+                        : 'No Outstanding Balance',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -192,9 +193,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  const Text(
-                    'Amount Due',
-                    style: TextStyle(
+                  Text(
+                    _outstandingAmount > 0 ? 'Amount Due' : 'Current Status',
+                    style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,
                     ),
@@ -207,18 +208,66 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      _outstandingAmount > 0
-                          ? 'KSh ${_outstandingAmount.toStringAsFixed(0)}'
-                          : 'KSh 0 - No outstanding balance',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            _outstandingAmount > 0
-                                ? AppColors.error
-                                : AppColors.success,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _outstandingAmount > 0
+                              ? 'KSh ${_outstandingAmount.toStringAsFixed(0)}'
+                              : 'All rent payments up to date',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                _outstandingAmount > 0
+                                    ? (_rentStatus?['isOverdue'] == true
+                                        ? AppColors.error
+                                        : AppColors.warning)
+                                    : AppColors.success,
+                          ),
+                        ),
+                        if (_rentStatus != null && _outstandingAmount > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'For: ${RentCalculationService.getRentPeriodDescription(_rentStatus!['currentDueDate'])}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _rentStatus!['isOverdue'] == true
+                                ? 'Overdue by ${_rentStatus!['daysSinceDue']} days'
+                                : 'Due: ${RentCalculationService.formatDate(_rentStatus!['currentDueDate'])}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color:
+                                  _rentStatus!['isOverdue'] == true
+                                      ? AppColors.error
+                                      : AppColors.warning,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ] else if (_rentStatus != null &&
+                            _outstandingAmount == 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Next rent due: ${RentCalculationService.formatDate(_rentStatus!['nextDueDate'])}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            'For: ${RentCalculationService.getRentPeriodDescription(_rentStatus!['nextDueDate'])}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -227,131 +276,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
             const SizedBox(height: 24),
 
-            // Payment method section
+            // Pay button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Payment method',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed:
+                      (_outstandingAmount <= 0)
+                          ? null
+                          : () => context.push('/paystack-payment'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  PaymentMethodCard(
-                    title: 'M-PESA',
-                    subtitle: 'Mobile money payment',
-                    icon: Icons.phone_android,
-                    isSelected: _selectedPaymentMethod == 'M-Pesa',
-                    onTap: () {
-                      setState(() {
-                        _selectedPaymentMethod = 'M-Pesa';
-                      });
-                    },
+                  child: const Text(
+                    'Pay Now',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 12),
-                  PaymentMethodCard(
-                    title: 'Bank Transfer',
-                    subtitle: 'Direct bank transfer',
-                    icon: Icons.account_balance,
-                    isSelected: _selectedPaymentMethod == 'Bank Transfer',
-                    onTap: () {
-                      setState(() {
-                        _selectedPaymentMethod = 'Bank Transfer';
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  PaymentMethodCard(
-                    title: 'Cash',
-                    subtitle: 'Pay at office',
-                    icon: Icons.money,
-                    isSelected: _selectedPaymentMethod == 'Cash',
-                    onTap: () {
-                      setState(() {
-                        _selectedPaymentMethod = 'Cash';
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Pay buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  // Paystack Payment Button (Primary)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed:
-                          (_outstandingAmount <= 0)
-                              ? null
-                              : () => context.push('/paystack-payment'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Pay with Paystack',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Traditional Payment Button (Secondary)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed:
-                          (_isProcessing || _outstandingAmount <= 0)
-                              ? null
-                              : _processPayment,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child:
-                          _isProcessing
-                              ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primary,
-                                ),
-                              )
-                              : const Text(
-                                'Traditional Payment',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
 
@@ -360,75 +307,5 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _processPayment() async {
-    if (_currentTenant == null || _outstandingAmount <= 0) return;
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    try {
-      // Create payment record
-      final payment = Payment(
-        id: '', // Will be set by Firestore
-        tenantId: _currentTenant!.id,
-        tenant: _currentTenant!.name,
-        unit: _currentTenant!.unit,
-        amount: _outstandingAmount,
-        type: 'Rent',
-        status: 'Pending', // Will be updated when payment is confirmed
-        paymentMethod: _selectedPaymentMethod,
-        transactionId: null, // Will be updated with actual transaction ID
-        dueDate: DateTime.now().toIso8601String(),
-        paidDate: null,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // Add payment to Firestore
-      await FirestoreService.addPayment(payment);
-
-      if (mounted) {
-        // Show success dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Payment Initiated'),
-                content: Text(
-                  'Your payment of KSh ${_outstandingAmount.toStringAsFixed(0)} via $_selectedPaymentMethod has been initiated. '
-                  'You will receive confirmation once the payment is processed.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      context.pop();
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payment failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-      }
-    }
   }
 }

@@ -4,6 +4,7 @@ import '../../constants/colors.dart';
 import '../../models/payment.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
+import '../../services/rent_calculation_service.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key});
@@ -520,10 +521,10 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                 const SizedBox(height: 16),
                 _buildDetailRow('Status', payment.status),
                 const SizedBox(height: 16),
-                _buildDetailRow('Due Date', payment.dueDate),
+                _buildDetailRow('Due Date', _formatDate(payment.dueDate)),
                 if (payment.paidDate != null) ...[
                   const SizedBox(height: 16),
-                  _buildDetailRow('Paid Date', payment.paidDate!),
+                  _buildDetailRow('Paid Date', _formatDate(payment.paidDate!)),
                 ],
                 if (payment.transactionId != null) ...[
                   const SizedBox(height: 16),
@@ -587,5 +588,14 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
         ),
       ],
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return RentCalculationService.formatDate(date);
+    } catch (e) {
+      return dateString; // Return original if parsing fails
+    }
   }
 }

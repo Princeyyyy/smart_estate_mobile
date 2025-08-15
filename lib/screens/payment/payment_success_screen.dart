@@ -94,7 +94,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                     height: 50,
                     child: OutlinedButton(
                       onPressed: () {
-                        context.go('/dashboard');
+                        context.go('/main');
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,

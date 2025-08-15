@@ -49,8 +49,22 @@ class OneSignalService {
       }
 
       if (permission) {
-        // Get the device ID (subscription ID)
-        final subscriptionId = OneSignal.User.pushSubscription.id;
+        // Wait for OneSignal to register the device
+        await Future.delayed(const Duration(seconds: 2));
+
+        // Try to get device ID with retries
+        String? subscriptionId;
+        for (int i = 0; i < 5; i++) {
+          subscriptionId = OneSignal.User.pushSubscription.id;
+          if (subscriptionId != null) break;
+
+          if (kDebugMode) {
+            print(
+              'Waiting for OneSignal device registration... attempt ${i + 1}',
+            );
+          }
+          await Future.delayed(const Duration(seconds: 1));
+        }
 
         if (kDebugMode) {
           print('OneSignal Device ID: $subscriptionId');
@@ -149,13 +163,59 @@ class OneSignalService {
     OneSignal.User.pushSubscription.addObserver((state) {
       if (kDebugMode) {
         print('Push subscription changed: ${state.current.id}');
+        print('Push subscription opted in: ${state.current.optedIn}');
       }
 
-      // Save new device ID when subscription changes
-      if (state.current.id != null) {
+      // Save new device ID when subscription changes and user is opted in
+      if (state.current.id != null && state.current.optedIn) {
+        if (kDebugMode) {
+          print('Device registered and opted in, saving to Firestore...');
+        }
         saveDeviceIdToFirestore();
       }
     });
+  }
+
+  /// Manually trigger device registration (useful for debugging)
+  static Future<void> manuallyRegisterDevice() async {
+    try {
+      if (kDebugMode) {
+        print('Manually triggering device registration...');
+      }
+
+      // Request permission if not already granted
+      await OneSignal.Notifications.requestPermission(true);
+
+      // Wait a bit for registration
+      await Future.delayed(const Duration(seconds: 3));
+
+      // Get device ID
+      final deviceId = getCurrentDeviceId();
+
+      if (deviceId != null) {
+        if (kDebugMode) {
+          print('Manual registration successful. Device ID: $deviceId');
+        }
+
+        // Save to Firestore
+        await saveDeviceIdToFirestore();
+
+        // Set user tags
+        await setTenantTags();
+
+        if (kDebugMode) {
+          print('Device registration and tagging complete');
+        }
+      } else {
+        if (kDebugMode) {
+          print('Manual registration failed - no device ID obtained');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in manual device registration: $e');
+      }
+    }
   }
 
   /// Handle notification tap

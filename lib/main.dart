@@ -22,6 +22,7 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/community/community_post_detail_screen.dart';
 import 'screens/emergency/emergency_alerts_screen.dart';
 import 'screens/events/events_calendar_screen.dart';
+import 'screens/debug/onesignal_debug_screen.dart';
 import 'models/community_post.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -156,6 +157,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/onesignal-debug',
+      builder: (context, state) => const OneSignalDebugScreen(),
     ),
   ],
 );

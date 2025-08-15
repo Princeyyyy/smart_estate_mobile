@@ -25,14 +25,14 @@ class PaystackService {
     return 'TXN_${timestamp}_$randomSuffix';
   }
 
-  /// Format amount to the smallest currency unit (cents for KES)
-  static double formatAmountToCents(double amount) {
-    return amount * 100;
+  /// Format amount for Paystack (KES doesn't need conversion to cents)
+  static double formatAmountForPaystack(double amount) {
+    return amount; // KES is already in the correct unit for Paystack
   }
 
-  /// Format amount from cents to main currency unit
-  static double formatAmountFromCents(double amountInCents) {
-    return amountInCents / 100;
+  /// Format amount from Paystack response
+  static double formatAmountFromPaystack(double paystackAmount) {
+    return paystackAmount; // KES doesn't need conversion from cents
   }
 
   /// Get payment channels based on payment method
@@ -49,6 +49,7 @@ class PaystackService {
       case 'bank transfer':
         return ['bank', 'bank_transfer'];
       default:
+        // Return all available channels if no specific method is selected
         return ['card', 'mobile_money', 'bank'];
     }
   }

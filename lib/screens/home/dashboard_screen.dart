@@ -5,6 +5,7 @@ import '../../widgets/quick_action_card.dart';
 import '../../widgets/notice_card.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
+import '../../services/rent_calculation_service.dart';
 import '../../models/tenant.dart';
 import '../../models/announcement.dart';
 
@@ -19,6 +20,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Tenant? _currentTenant;
   List<Announcement> _announcements = [];
   double _outstandingBalance = 0.0;
+  Map<String, dynamic>? _rentStatus;
   bool _isLoading = true;
   String? _error;
 
@@ -48,19 +50,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
         });
 
-        // Listen to payment updates to update outstanding balance
+        // Listen to payment updates to update rent status
         FirestoreService.subscribeToTenantPayments(tenant.id).listen((
           payments,
-        ) {
+        ) async {
           if (mounted) {
-            double outstanding = 0.0;
-            for (final payment in payments) {
-              if (payment.status == 'Pending' || payment.status == 'Overdue') {
-                outstanding += payment.amount;
-              }
-            }
+            // Recalculate rent status when payments change
+            final rentStatus =
+                await RentCalculationService.getCurrentRentStatus(tenant);
             setState(() {
-              _outstandingBalance = outstanding;
+              _rentStatus = rentStatus;
+              _outstandingBalance = rentStatus['outstandingAmount'] as double;
             });
           }
         });
@@ -89,10 +89,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         tenant.id,
       );
 
+      // Get current rent status using the new rent calculation service
+      final rentStatus = await RentCalculationService.getCurrentRentStatus(
+        tenant,
+      );
+
       setState(() {
         _currentTenant = dashboardData['tenant'] as Tenant;
         _announcements = dashboardData['announcements'] as List<Announcement>;
-        _outstandingBalance = dashboardData['outstandingBalance'] as double;
+        _rentStatus = rentStatus;
+        _outstandingBalance = rentStatus['outstandingAmount'] as double;
         _isLoading = false;
       });
     } catch (e) {
@@ -231,29 +237,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Outstanding Balance',
+                          _rentStatus != null &&
+                                  _rentStatus!['status'] == 'Paid'
+                              ? 'Rent Status'
+                              : 'Current Rent Due',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'KSh ${_outstandingBalance.toStringAsFixed(0)}',
+                          _outstandingBalance > 0
+                              ? 'KSh ${_outstandingBalance.toStringAsFixed(0)}'
+                              : 'Paid',
                           style: Theme.of(
                             context,
                           ).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color:
                                 _outstandingBalance > 0
-                                    ? AppColors.error
+                                    ? (_rentStatus?['isOverdue'] == true
+                                        ? AppColors.error
+                                        : AppColors.warning)
                                     : AppColors.success,
                           ),
                         ),
-                        if (_currentTenant != null)
+                        if (_currentTenant != null) ...[
                           Text(
                             'Unit: ${_currentTenant!.unit}',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(color: AppColors.textSecondary),
                           ),
+                          if (_rentStatus != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              _outstandingBalance > 0
+                                  ? (_rentStatus!['isOverdue'] == true
+                                      ? 'Overdue by ${_rentStatus!['daysSinceDue']} days'
+                                      : 'Due: ${RentCalculationService.formatDate(_rentStatus!['currentDueDate'])}')
+                                  : 'Next due: ${RentCalculationService.formatDate(_rentStatus!['nextDueDate'])}',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color:
+                                    _outstandingBalance > 0
+                                        ? (_rentStatus!['isOverdue'] == true
+                                            ? AppColors.error
+                                            : AppColors.warning)
+                                        : AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
                       ],
                     ),
                     ElevatedButton(
