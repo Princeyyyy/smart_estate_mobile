@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum PaymentStatus { pending, paid, overdue }
+enum PaymentStatus { pending, paid, overdue, processing, failed }
 
-enum PaymentMethod { mpesa, bankTransfer, cash }
+enum PaymentMethod { mpesa, bankTransfer, cash, card, mobileMoney }
 
 class Payment {
   final String id;
@@ -12,8 +12,11 @@ class Payment {
   final double amount;
   final String type; // Rent, Deposit, Utilities, etc.
   final String status; // Pending, Paid, Overdue
-  final String paymentMethod; // M-Pesa, Bank Transfer, Cash
+  final String paymentMethod; // M-Pesa, Bank Transfer, Cash, Card, Mobile Money
   final String? transactionId;
+  final String? paystackReference; // Paystack transaction reference
+  final String? paystackStatus; // Paystack payment status
+  final Map<String, dynamic>? paystackMetadata; // Additional Paystack data
   final String dueDate;
   final String? paidDate;
   final DateTime createdAt;
@@ -29,6 +32,9 @@ class Payment {
     required this.status,
     required this.paymentMethod,
     this.transactionId,
+    this.paystackReference,
+    this.paystackStatus,
+    this.paystackMetadata,
     required this.dueDate,
     this.paidDate,
     required this.createdAt,
@@ -46,6 +52,12 @@ class Payment {
       status: json['status'] ?? 'Pending',
       paymentMethod: json['paymentMethod'] ?? 'M-Pesa',
       transactionId: json['transactionId'],
+      paystackReference: json['paystackReference'],
+      paystackStatus: json['paystackStatus'],
+      paystackMetadata:
+          json['paystackMetadata'] != null
+              ? Map<String, dynamic>.from(json['paystackMetadata'])
+              : null,
       dueDate: json['dueDate'] ?? '',
       paidDate: json['paidDate'],
       createdAt:
@@ -74,6 +86,9 @@ class Payment {
       'status': status,
       'paymentMethod': paymentMethod,
       'transactionId': transactionId,
+      'paystackReference': paystackReference,
+      'paystackStatus': paystackStatus,
+      'paystackMetadata': paystackMetadata,
       'dueDate': dueDate,
       'paidDate': paidDate,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -91,6 +106,9 @@ class Payment {
     String? status,
     String? paymentMethod,
     String? transactionId,
+    String? paystackReference,
+    String? paystackStatus,
+    Map<String, dynamic>? paystackMetadata,
     String? dueDate,
     String? paidDate,
     DateTime? createdAt,
@@ -106,6 +124,9 @@ class Payment {
       status: status ?? this.status,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       transactionId: transactionId ?? this.transactionId,
+      paystackReference: paystackReference ?? this.paystackReference,
+      paystackStatus: paystackStatus ?? this.paystackStatus,
+      paystackMetadata: paystackMetadata ?? this.paystackMetadata,
       dueDate: dueDate ?? this.dueDate,
       paidDate: paidDate ?? this.paidDate,
       createdAt: createdAt ?? this.createdAt,

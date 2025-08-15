@@ -13,6 +13,7 @@ class Tenant {
   final String firebaseUid;
   final String defaultPassword;
   final bool hasChangedPassword;
+  final String? oneSignalDeviceId;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -30,6 +31,7 @@ class Tenant {
     required this.firebaseUid,
     required this.defaultPassword,
     required this.hasChangedPassword,
+    this.oneSignalDeviceId,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -49,13 +51,20 @@ class Tenant {
       firebaseUid: json['firebaseUid'] ?? '',
       defaultPassword: json['defaultPassword'] ?? '',
       hasChangedPassword: json['hasChangedPassword'] ?? false,
+      oneSignalDeviceId: json['oneSignalDeviceId'],
       notes: json['notes'],
-      createdAt: json['createdAt'] is Timestamp 
-          ? (json['createdAt'] as Timestamp).toDate()
-          : DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: json['updatedAt'] is Timestamp 
-          ? (json['updatedAt'] as Timestamp).toDate()
-          : DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt:
+          json['createdAt'] is Timestamp
+              ? (json['createdAt'] as Timestamp).toDate()
+              : DateTime.parse(
+                json['createdAt'] ?? DateTime.now().toIso8601String(),
+              ),
+      updatedAt:
+          json['updatedAt'] is Timestamp
+              ? (json['updatedAt'] as Timestamp).toDate()
+              : DateTime.parse(
+                json['updatedAt'] ?? DateTime.now().toIso8601String(),
+              ),
     );
   }
 
@@ -73,6 +82,7 @@ class Tenant {
       'firebaseUid': firebaseUid,
       'defaultPassword': defaultPassword,
       'hasChangedPassword': hasChangedPassword,
+      'oneSignalDeviceId': oneSignalDeviceId,
       'notes': notes,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -92,6 +102,7 @@ class Tenant {
     String? firebaseUid,
     String? defaultPassword,
     bool? hasChangedPassword,
+    String? oneSignalDeviceId,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -109,6 +120,7 @@ class Tenant {
       firebaseUid: firebaseUid ?? this.firebaseUid,
       defaultPassword: defaultPassword ?? this.defaultPassword,
       hasChangedPassword: hasChangedPassword ?? this.hasChangedPassword,
+      oneSignalDeviceId: oneSignalDeviceId ?? this.oneSignalDeviceId,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

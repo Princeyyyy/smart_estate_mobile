@@ -53,6 +53,20 @@ class FirestoreService {
     }
   }
 
+  static Future<void> updateTenantOneSignalId(
+    String tenantId,
+    String oneSignalDeviceId,
+  ) async {
+    try {
+      await _firestore.collection('tenants').doc(tenantId).update({
+        'oneSignalDeviceId': oneSignalDeviceId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update tenant OneSignal ID: $e');
+    }
+  }
+
   static Stream<Tenant?> subscribeToTenant(String tenantId) {
     return _firestore.collection('tenants').doc(tenantId).snapshots().map((
       snapshot,
@@ -118,6 +132,117 @@ class FirestoreService {
       });
     } catch (e) {
       throw Exception('Failed to update payment: $e');
+    }
+  }
+
+  static Future<void> updatePaymentStatus(
+    String paymentId,
+    String status, {
+    String? transactionId,
+    String? paystackReference,
+    String? paystackStatus,
+    Map<String, dynamic>? paystackMetadata,
+    String? paidDate,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (transactionId != null) updates['transactionId'] = transactionId;
+      if (paystackReference != null)
+        updates['paystackReference'] = paystackReference;
+      if (paystackStatus != null) updates['paystackStatus'] = paystackStatus;
+      if (paystackMetadata != null)
+        updates['paystackMetadata'] = paystackMetadata;
+      if (paidDate != null) updates['paidDate'] = paidDate;
+
+      await _firestore.collection('payments').doc(paymentId).update(updates);
+    } catch (e) {
+      throw Exception('Failed to update payment status: $e');
+    }
+  }
+
+  static Future<List<Payment>> getPaymentsByStatus(
+    String tenantId,
+    String status,
+  ) async {
+    try {
+      final query =
+          await _firestore
+              .collection('payments')
+              .where('tenantId', isEqualTo: tenantId)
+              .where('status', isEqualTo: status)
+              .orderBy('createdAt', descending: true)
+              .get();
+
+      return query.docs.map((doc) {
+        return Payment.fromJson({'id': doc.id, ...doc.data()});
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to get payments by status: $e');
+    }
+  }
+
+  static Future<Payment?> getPaymentByReference(String reference) async {
+    try {
+      final query =
+          await _firestore
+              .collection('payments')
+              .where('paystackReference', isEqualTo: reference)
+              .limit(1)
+              .get();
+
+      if (query.docs.isNotEmpty) {
+        final doc = query.docs.first;
+        return Payment.fromJson({'id': doc.id, ...doc.data()});
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get payment by reference: $e');
+    }
+  }
+
+  static Future<double> getTenantOutstandingBalance(String tenantId) async {
+    try {
+      final query =
+          await _firestore
+              .collection('payments')
+              .where('tenantId', isEqualTo: tenantId)
+              .where('status', whereIn: ['Pending', 'Overdue'])
+              .get();
+
+      double outstanding = 0.0;
+      for (final doc in query.docs) {
+        final payment = Payment.fromJson({'id': doc.id, ...doc.data()});
+        outstanding += payment.amount;
+      }
+
+      return outstanding;
+    } catch (e) {
+      throw Exception('Failed to get outstanding balance: $e');
+    }
+  }
+
+  static Future<List<Payment>> getRecentPayments(
+    String tenantId, {
+    int limit = 10,
+  }) async {
+    try {
+      final query =
+          await _firestore
+              .collection('payments')
+              .where('tenantId', isEqualTo: tenantId)
+              .orderBy('createdAt', descending: true)
+              .limit(limit)
+              .get();
+
+      return query.docs.map((doc) {
+        return Payment.fromJson({'id': doc.id, ...doc.data()});
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to get recent payments: $e');
     }
   }
 

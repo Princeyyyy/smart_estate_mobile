@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/tenant.dart';
+import 'onesignal_service.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,6 +23,10 @@ class AuthService {
         email: email,
         password: password,
       );
+
+      // Setup OneSignal after successful login
+      await _setupOneSignalForUser();
+
       return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -105,6 +110,31 @@ class AuthService {
     } catch (e) {
       throw Exception('Failed to sign out: $e');
     }
+  }
+
+  // Setup OneSignal for the current user
+  static Future<void> _setupOneSignalForUser() async {
+    try {
+      // Request notification permission and get device ID
+      final deviceId = await OneSignalService.requestPermissionAndGetDeviceId();
+
+      if (deviceId != null) {
+        // Save device ID to Firestore
+        await OneSignalService.saveDeviceIdToFirestore();
+
+        // Set user tags for segmentation
+        await OneSignalService.setTenantTags();
+      }
+    } catch (e) {
+      // Don't throw error for OneSignal setup failure
+      // Just log it and continue
+      print('OneSignal setup failed: $e');
+    }
+  }
+
+  // Public method to setup OneSignal (can be called from other places)
+  static Future<void> setupOneSignalForCurrentUser() async {
+    await _setupOneSignalForUser();
   }
 
   // Handle Firebase Auth exceptions

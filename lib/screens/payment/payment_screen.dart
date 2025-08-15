@@ -283,42 +283,75 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
             const SizedBox(height: 32),
 
-            // Pay button
+            // Pay buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed:
-                      (_isProcessing || _outstandingAmount <= 0)
-                          ? null
-                          : _processPayment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              child: Column(
+                children: [
+                  // Paystack Payment Button (Primary)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed:
+                          (_outstandingAmount <= 0)
+                              ? null
+                              : () => context.push('/paystack-payment'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Pay with Paystack',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                  child:
-                      _isProcessing
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                          : const Text(
-                            'Pay',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                ),
+
+                  const SizedBox(height: 12),
+
+                  // Traditional Payment Button (Secondary)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed:
+                          (_isProcessing || _outstandingAmount <= 0)
+                              ? null
+                              : _processPayment,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child:
+                          _isProcessing
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              )
+                              : const Text(
+                                'Traditional Payment',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                    ),
+                  ),
+                ],
               ),
             ),
 

@@ -53,6 +53,12 @@ dependencies:
   
   # Permissions
   permission_handler: ^11.3.1
+  
+  # Payment Processing
+  pay_with_paystack: ^1.0.7
+  
+  # Push Notifications
+  onesignal_flutter: ^5.2.5
 
 dev_dependencies:
   flutter_test:
@@ -63,8 +69,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
 
   fonts:
     - family: Inter

@@ -7,6 +7,8 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/change_password_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/payment/payment_screen.dart';
+import 'screens/payment/paystack_payment_screen.dart';
+import 'screens/payment/payment_success_screen.dart';
 import 'screens/payment/payment_history_screen.dart';
 import 'screens/maintenance/report_issue_screen.dart';
 import 'screens/profile/profile_screen.dart';
@@ -23,10 +25,18 @@ import 'screens/events/events_calendar_screen.dart';
 import 'models/community_post.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'services/onesignal_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize OneSignal
+  await OneSignalService.initialize();
+  OneSignalService.setupNotificationHandlers();
+
   runApp(const SmartEstateApp());
 }
 
@@ -61,6 +71,14 @@ final _router = GoRouter(
     GoRoute(
       path: '/payment',
       builder: (context, state) => const PaymentScreen(),
+    ),
+    GoRoute(
+      path: '/paystack-payment',
+      builder: (context, state) => const PaystackPaymentScreen(),
+    ),
+    GoRoute(
+      path: '/payment-success',
+      builder: (context, state) => const PaymentSuccessScreen(),
     ),
     GoRoute(
       path: '/payment-history',
